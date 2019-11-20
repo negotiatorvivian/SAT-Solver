@@ -1,0 +1,13 @@
+model_type: "p-nd-np"
+#has_meta_data: false
+model_name: "p-prodec2-nsp-cnf-3-10-pytorch"
+model_path: "Trained-models/SAT/p-prodec2-nsp-cnf-3-10-pytorch/2.0/best/"
+label_dim: 1
+edge_feature_dim: 1
+meta_feature_dim: 0
+prediction_dim: 1
+hidden_dim: 150
+mem_hidden_dim: 50
+agg_hidden_dim: 50
+mem_agg_hidden_dim: 50
+classifier_dim: 50

@@ -1,0 +1,23 @@
+model_type: "np-nd-np"
+has_meta_data: false
+model_name: "p-prodec2-gcnf-10-100-pytorch"
+#model_path: "Trained-models/SAT/p-prodec2-gcnf-4SAT-pytorch/2.0g/best/"
+model_path: "Trained-models/SAT/p-prodec2-gcnf-10-100-pytorch/6.0g/best/"
+label_dim: 1
+edge_feature_dim: 1
+meta_feature_dim: 0
+prediction_dim: 1
+# hidden_dim: 160 #150
+# mem_hidden_dim: 136 #150
+# agg_hidden_dim: 96 #135
+# mem_agg_hidden_dim: 32 #50
+# classifier_dim: 56 #100
+hidden_dim: 150
+mem_hidden_dim: 136
+agg_hidden_dim: 100
+mem_agg_hidden_dim: 50
+classifier_dim: 50
+#batch_replication: 10
+#python build\scripts-3.5\satyr.py config\Predict\PDP-np-nd-np-gcnf-10-100-pytorch.yaml datasets\SAT7\v-modular_0.json 180 -w 9000
+#python build/scripts-3.6/satyr.py config/Predict/PDP-np-nd-np-gcnf-10-100-pytorch.yaml datasets/SAT/competition.json 200 -w 8000 -b 2
+

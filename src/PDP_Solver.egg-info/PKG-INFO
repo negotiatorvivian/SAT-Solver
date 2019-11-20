@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: PDP-Solver
+Version: 0.1
+Summary: PDP Framework for Neural Constraint Satisfaction Solving
+Home-page: https://github/Microsoft/PDP-Solver
+Author: Saeed Amizadeh
+Author-email: saamizad@microsoft.com
+License: MIT
+Description: UNKNOWN
+Keywords: pdp sat solver pytorch neurosymbolic
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Requires-Python: >=3.5
+Description-Content-Type: text/markdown

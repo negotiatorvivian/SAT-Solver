@@ -1,0 +1,9 @@
+datasets/
+*.pyc
+dist/
+build/
+sat*
+Trained-models/SAT5
+Trained-models/SAT6
+Trained-models/SAT7
+Trained-models/SAT8
