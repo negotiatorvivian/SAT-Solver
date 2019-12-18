@@ -61,7 +61,6 @@ class CompactDimacs:
 
         self._output = output
 
-
     def _propagate_constraints(self, clause_mat):
         n = clause_mat.shape[0]
         if n < 2:
@@ -133,6 +132,12 @@ class CompactDimacs:
         # return [[var_num, clause_num], list(((ind[1] + 1) * self._clause_mat[ind]).astype(np.int)), list(ind[0] + 1), self._output]
         return node_type, relations, test_str, validate_str, max(type_2)
 
+    def to_json_raw(self):
+        clause_num, var_num = self._clause_mat.shape
+        ind = np.nonzero(self._clause_mat)
+        return [[var_num, clause_num], list(((ind[1] + 1) * self._clause_mat[ind]).astype(np.int)), list(ind[0] + 1), self._output]
+        # return node_type, relations, test_str, validate_str, max(type_2)
+
 
 def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
     file_list = [join(dimacs_dir, f) for f in listdir(dimacs_dir) if isfile(join(dimacs_dir, f))]
@@ -180,6 +185,30 @@ def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
         print(e)
 
 
+def convert_directory_raw(dimacs_dir, output_file, propagate, only_positive=False):
+    file_list = [join(dimacs_dir, f) for f in listdir(dimacs_dir) if isfile(join(dimacs_dir, f))]
+    with open(output_file, 'w') as f:
+        for i in range(len(file_list)):
+            name, ext = splitext(file_list[i])
+            ext = ext.lower()
+
+            if ext != '.dimacs' and ext != '.cnf':
+                continue
+
+            # label = float(name[-1]) if name[-1].isdigit() else -1
+            # label = 1 if name.split('=')[-1] == 'True' else -1
+            label = -1
+
+            if only_positive and label == 0:
+                continue
+
+            bc = CompactDimacs(file_list[i], label, propagate)
+            f.write(str(bc.to_json_raw()).replace("'", '"') + '\n')
+            # print("Generating JSON input file: %6.2f%% complete..." % (
+            #     (i + 1) * 100.0 / len(file_list)), end='\r', file=sys.stderr)
+            # node_type, relations, test_str, validate_str, base = bc.to_json(base)
+
+
 def convert_file(file_name, output_file, propagate):
     with open(output_file, 'w') as f:
         if len(file_name) < 8:
@@ -200,4 +229,4 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--positive', help='Output only positive examples', required=False, action='store_true', default=False)
     args = vars(parser.parse_args())
 
-    convert_directory(args['in_dir'], args['out_file'], args['simplify'], args['positive'])
+    convert_directory_raw(args['in_dir'], args['out_file'], args['simplify'], args['positive'])

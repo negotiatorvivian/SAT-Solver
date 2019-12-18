@@ -30,13 +30,13 @@ class NeuralMessagePasser(nn.Module):
         self._drop_out = dropout
 
         self._variable_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension
-                                                           + meta_data_dimension,
-            hidden_dimension, mem_hidden_dimension,
-            mem_agg_hidden_dimension, agg_hidden_dimension, edge_dimension, include_self_message=False)
+                                                           + meta_data_dimension,hidden_dimension, mem_hidden_dimension,
+                                                           mem_agg_hidden_dimension, agg_hidden_dimension,
+                                                           edge_dimension, include_self_message=False)
         self._function_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension
-                                                           + meta_data_dimension,
-            hidden_dimension, mem_hidden_dimension,
-            mem_agg_hidden_dimension, agg_hidden_dimension, edge_dimension, include_self_message=False)
+                                                           + meta_data_dimension, hidden_dimension, mem_hidden_dimension
+                                                           , mem_agg_hidden_dimension, agg_hidden_dimension,
+                                                           edge_dimension, include_self_message=False)
 
         self._module_list.append(self._variable_aggregator)
         self._module_list.append(self._function_aggregator)
@@ -49,7 +49,6 @@ class NeuralMessagePasser(nn.Module):
         self._n_head = 8
         self._n_layers = 4
         self._d_k = self._hidden_dimension/self._n_head
-        self.pre_embedding = np.load('datasets/arr_0.npy')
 
     # @profile
     def forward(self, init_state, decimator_state, sat_problem, is_training, active_mask=None):

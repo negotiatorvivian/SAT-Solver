@@ -23,6 +23,7 @@ class DynamicBatchDivider(object):
     def divide(self, variable_num, function_num, graph_map, edge_feature, graph_feature, label, misc_data):
         batch_size = len(variable_num)
         edge_num = [len(n) for n in edge_feature]
+        # func_num = [len(n) for n in function_num]
 
         graph_map_list = []
         edge_feature_list = []
@@ -49,12 +50,12 @@ class DynamicBatchDivider(object):
         else:
 
             indices = sorted(range(len(edge_num)), reverse=True, key=lambda k: edge_num[k])
-            sorted_edge_num = sorted(edge_num, reverse=True)
+            sorted_func_num = sorted(edge_num, reverse=True)
 
             i = 0
 
             while i < batch_size:
-                allowed_batch_size = self.limit // (sorted_edge_num[i] * self.hidden_dim)
+                allowed_batch_size = self.limit // (sorted_func_num[i])
                 # allowed_batch_size = min(allowed_batch_size, 1)
                 ind = indices[i:min(i + allowed_batch_size, batch_size)]
 
@@ -66,6 +67,7 @@ class DynamicBatchDivider(object):
                 edge_feature_list += [[edge_feature[j] for j in ind]]
                 variable_num_list += [[variable_num[j] for j in ind]]
                 function_num_list += [[function_num[j] for j in ind]]
+
                 graph_map_list += [[graph_map[j] for j in ind]]
                 label_list += [[label[j] for j in ind]]
                 misc_data_list += [[misc_data[j] for j in ind]]
@@ -94,6 +96,8 @@ class FactorGraphDataset(data.Dataset):
                 self._row_num = len(fh_input.readlines())
         # print(batch_replication)
         self.batch_divider = DynamicBatchDivider(limit // batch_replication, hidden_dim)
+        self.pre_embedding = np.load('datasets/arr_0.npy')
+        self.start = 0
 
     def __len__(self):
         if self._generator is not None:
@@ -129,7 +133,11 @@ class FactorGraphDataset(data.Dataset):
         variable_ind = np.array(input_data[1], dtype=np.int32)
         variable_ind[np.argwhere(variable_ind > variable_num)] = 0
         variable_num += 1
-        edge_feature = np.sign(variable_ind)
+        # edge_feature = np.sign(variable_ind)
+        shape = (function_num + variable_num) * self.pre_embedding.shape[1]
+        edge_feature = np.reshape(self.pre_embedding[self.start: self.start + function_num + variable_num], shape)
+        # edge_feature += [np.reshape(self.pre_embedding[self.start + variable_num: variable_num + function_num], (1, -1))[0]]
+        self.start += variable_num + function_num
         variable_ind = np.abs(variable_ind)
         # var_count = list(set(variable_ind))
         function_ind = np.abs(np.array(input_data[2], dtype=np.int32)) - 1
@@ -165,12 +173,10 @@ class FactorGraphDataset(data.Dataset):
         # result = True
         result = input_data[3] if len(input_data) > 3 else False
 
-
         return (variable_num, function_num, graph_map, edge_feature, None, float(result), misc_data)
 
-
     def dag_collate_fn(self, input_data):
-        "Torch dataset loader collation function for factor graph input."
+        """Torch dataset loader collation function for factor graph input."""
         vn, fn, gm, ef, gf, l, md = zip(*input_data)
 
         variable_num, function_num, graph_map, edge_feature, graph_feat, label, misc_data = \
@@ -188,11 +194,11 @@ class FactorGraphDataset(data.Dataset):
             # Create the graph features batch
             graph_feat_batch += [None if graph_feat[i][0] is None else torch.from_numpy(np.stack(graph_feat[i])).float()]
 
-            # Create the edge feature batch
-            edge_feature_batch += [torch.from_numpy(np.expand_dims(np.concatenate(edge_feature[i]), 1)).float()]
-
             # Create the label batch
             label_batch += [torch.from_numpy(np.expand_dims(np.array(label[i]), 1)).float()]
+
+            # Create the edge feature batch
+            edge_feature_batch += [torch.from_numpy(np.expand_dims(np.concatenate(edge_feature[i]), 1)).float()]
 
             # Create the graph map, variable map and function map batches
             g_map_b = np.zeros((2, 0), dtype=np.int32)
