@@ -3,6 +3,7 @@
 
 # pdp_predict.py : Defines various predictors and scorers for the PDP framework.
 
+from collections import Counter
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -88,6 +89,8 @@ class NeuralPredictor(nn.Module):
 
             function_prediction = self._function_classifier(aggregated_function_state)
         # print(function_prediction)
+        # if last_call:
+        #     self._sort_vars(variable_prediction.tolist(), 10)
         return variable_prediction, function_prediction
 
     def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, randomized, batch_replication):
@@ -103,7 +106,18 @@ class NeuralPredictor(nn.Module):
 
         return (variable_state, function_state)
 
+    def _sort_vars(self, scores, top_n):
+        '''Sort variables according to their predicted value.'''
+        score_dict = {}
+        for k, v in enumerate(scores):
+            score_dict[k] = round(abs(v[0]), 4)
 
+        result = Counter(score_dict).most_common(top_n)
+        d = {}
+        for k, v in result:
+            d[k] = v
+        print(d)
+        return d
 ###############################################################
 
 

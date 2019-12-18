@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from pdp.nn import util
+# from pdp.nn import attention
 
 
 ###############################################################
@@ -28,6 +29,7 @@ class NeuralDecimator(nn.Module):
         self._device = device
         self._module_list = nn.ModuleList()
         self._drop_out = dropout
+
 
         if isinstance(message_dimension, tuple):
             variable_message_dim, function_message_dim = message_dimension
@@ -78,6 +80,8 @@ class NeuralDecimator(nn.Module):
                 variable_state = torch.cat((variable_state, sat_problem._edge_feature), 1).to(dtype = torch.half)
         else:
             variable_state = torch.cat((variable_state, sat_problem._edge_feature), 1)
+        # seq_len = sat_problem._edge_feature.shape
+        # output = attention.Attention(variable_state.unsqueeze(0), 3, variable_state.shape[1], seq_len, seq_len, self._device)
 
         if sat_problem._meta_data is not None:
             variable_state = torch.cat((variable_state, graph_feat), 1)

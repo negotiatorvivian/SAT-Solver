@@ -5,13 +5,12 @@
 
 import linecache, json
 import collections
+from itertools import combinations
 import numpy as np
 
 import torch
 import torch.utils.data as data
-
-from os import listdir
-from os.path import isfile, join
+import scipy.sparse as sp
 
 
 class DynamicBatchDivider(object):
@@ -31,6 +30,7 @@ class DynamicBatchDivider(object):
         variable_num_list = []
         function_num_list = []
         label_list = []
+        adj_list = []
         misc_data_list = []
 
         if (self.limit // (max(edge_num) * self.hidden_dim)) >= batch_size:
@@ -55,7 +55,7 @@ class DynamicBatchDivider(object):
 
             while i < batch_size:
                 allowed_batch_size = self.limit // (sorted_edge_num[i] * self.hidden_dim)
-                # print('allowed_batch_size:', (sorted_edge_num[i] * self.hidden_dim))
+                # allowed_batch_size = min(allowed_batch_size, 1)
                 ind = indices[i:min(i + allowed_batch_size, batch_size)]
 
                 if graph_feature[0] is None:
@@ -112,7 +112,7 @@ class FactorGraphDataset(data.Dataset):
 
             line = linecache.getline(self._input_file, idx + 1)
             # line = linecache.getline(self._input_file, idx + 1)[1:-2]
-            # print(idx, '\n\n')
+
             result = self._convert_line(line)
 
             if len(self._cache) >= self._max_cache_size:
@@ -126,10 +126,36 @@ class FactorGraphDataset(data.Dataset):
         input_data = json.loads(json_str)
         variable_num, function_num = input_data[0]
 
-        variable_ind = np.abs(np.array(input_data[1], dtype=np.int32)) - 1
+        variable_ind = np.array(input_data[1], dtype=np.int32)
+        variable_ind[np.argwhere(variable_ind > variable_num)] = 0
+        variable_num += 1
+        edge_feature = np.sign(variable_ind)
+        variable_ind = np.abs(variable_ind)
+        # var_count = list(set(variable_ind))
         function_ind = np.abs(np.array(input_data[2], dtype=np.int32)) - 1
-        edge_feature = np.sign(np.array(input_data[1], dtype=np.float32))
-
+        # func_index = np.array([function_ind[j] for j in [np.argwhere(variable_ind == i) for i in var_count]])
+        # iters = np.array([c for c in [list(combinations(range(len(func_index[i])), 2)) for i in range(len(func_index))]])
+        # # edge_relations = []
+        # edge_idx_relations = []
+        #
+        # try:
+        #     for i in range(len(iters)):
+        #         if len(iters[i]) == 0:
+        #             continue
+        #         temp = np.squeeze(func_index[i][np.array(iters[i])], axis = 2)
+        #         # edge_relations.append(temp)
+        #         edge_idx_relations += ['+'.join(map(str, list(temp[j]))) for j in range(len(temp))]
+        # except:
+        #     print(len(edge_idx_relations))
+        # edge_idx_relations = Counter(edge_idx_relations)
+        # edge_count = list(dict(edge_idx_relations).values())
+        # row_col_s = [i for i in map(lambda x: x.split('+'), list(dict(edge_idx_relations).keys()))]
+        # rows = np.array(np.array(row_col_s)[:,0], dtype = np.int)
+        # cols = np.array(np.array(row_col_s)[:,1], dtype = np.int)
+        # adj = sp.coo_matrix((edge_count, (rows.tolist(), cols.tolist())), shape = (function_num, function_num))
+        # adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+        # adj = self._normalize_adj(adj + sp.eye(adj.shape[0]))
+        # adj = torch.FloatTensor(np.array(adj.todense()))
         graph_map = np.stack((variable_ind, function_ind))
         alpha = float(function_num) / variable_num
 
@@ -137,10 +163,11 @@ class FactorGraphDataset(data.Dataset):
         if len(input_data) > 4:
             misc_data = input_data[4]
         # result = True
-        result = input_data[3]
+        result = input_data[3] if len(input_data) > 3 else False
 
 
         return (variable_num, function_num, graph_map, edge_feature, None, float(result), misc_data)
+
 
     def dag_collate_fn(self, input_data):
         "Torch dataset loader collation function for factor graph input."
@@ -149,7 +176,6 @@ class FactorGraphDataset(data.Dataset):
         variable_num, function_num, graph_map, edge_feature, graph_feat, label, misc_data = \
             self.batch_divider.divide(vn, fn, gm, ef, gf, l, md)
         segment_num = len(variable_num)
-
         graph_feat_batch = []
         graph_map_batch = []
         batch_variable_map_batch = []
@@ -185,6 +211,11 @@ class FactorGraphDataset(data.Dataset):
 
                 variable_ind += variable_num[i][j]
                 function_ind += function_num[i][j]
+
+                # index = torch.LongTensor([adj[i][j].row, adj[i][j].col])
+                # value = torch.IntTensor(adj[i][j].data)
+                # adj_obj = torch.sparse.FloatTensor(index, value).to_dense()
+                # adj_batch.append(adj_obj)
 
             graph_map_batch += [torch.from_numpy(g_map_b).int()]
             batch_variable_map_batch += [torch.from_numpy(v_map_b).int()]

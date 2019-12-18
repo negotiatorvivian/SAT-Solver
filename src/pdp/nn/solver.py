@@ -7,11 +7,13 @@ import os
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch.autograd import Variable
+import numpy as np
+from collections import Counter
+from itertools import combinations
+import scipy.sparse as sp
 
 from pdp.nn import pdp_propagate, pdp_decimate, pdp_predict, util
-
-
 ###############################################################
 ### The Problem Class
 ###############################################################
@@ -45,7 +47,7 @@ class SATProblem(object):
         self._pos_mask_tuple = self._compute_graph_mask(self._graph_map, self._batch_variable_map, self._batch_function_map, (self._edge_feature == 1).squeeze(1).float())
         self._neg_mask_tuple = self._compute_graph_mask(self._graph_map, self._batch_variable_map, self._batch_function_map, (self._edge_feature == -1).squeeze(1).float())
         self._signed_mask_tuple = self._compute_graph_mask(self._graph_map, self._batch_variable_map, self._batch_function_map, self._edge_feature.squeeze(1))
-
+        # self._adj_mask = self._compute_adj_mask(self._graph_map, self._batch_function_map)
         self._active_variables = torch.ones(self._variable_num, 1, device=self._device)
         self._active_functions = torch.ones(self._function_num, 1, device=self._device)
         self._solution = 0.5 * torch.ones(self._variable_num, device=self._device)
@@ -176,6 +178,43 @@ class SATProblem(object):
         function_mask_transpose = function_mask.transpose(0, 1)
 
         return (variable_mask, variable_mask_transpose, function_mask, function_mask_transpose)
+
+    def _compute_adj_mask(self, graph_map, batch_function_map):
+        function_num = batch_function_map.size()[0]
+        function_ind = graph_map[1].cpu().numpy()
+        variable_ind = graph_map[0].cpu().numpy()
+        var_count = list(set(variable_ind))
+        func_index = np.array([function_ind[j] for j in [np.argwhere(variable_ind == i) for i in var_count]])
+        iters = np.array(
+            [c for c in [list(combinations(range(len(func_index[i])), 2)) for i in range(len(func_index))]])
+        edge_idx_relations = []
+
+        try:
+            for i in range(len(iters)):
+                if len(iters[i]) == 0:
+                    continue
+                temp = np.squeeze(func_index[i][np.array(iters[i])], axis = 2)
+                edge_idx_relations += ['+'.join(map(str, list(temp[j]))) for j in range(len(temp))]
+        except:
+            print(len(edge_idx_relations))
+        edge_idx_relations = Counter(edge_idx_relations)
+        edge_count = list(dict(edge_idx_relations).values())
+        row_col_s = [i for i in map(lambda x: x.split('+'), list(dict(edge_idx_relations).keys()))]
+        rows = np.array(np.array(row_col_s)[:, 0], dtype = np.int)
+        cols = np.array(np.array(row_col_s)[:, 1], dtype = np.int)
+        adj = sp.coo_matrix((edge_count, (rows.tolist(), cols.tolist())), shape = (function_num, function_num))
+        adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+        adj = self._normalize_adj(adj + sp.eye(adj.shape[0]))
+        adj = torch.FloatTensor(np.array(adj.todense())).to(self._device)
+        return Variable(adj)
+
+    def _normalize_adj(self, mx):
+        """Row-normalize sparse matrix"""
+        rowsum = np.array(mx.sum(1))
+        r_inv_sqrt = np.power(rowsum, -0.5).flatten()
+        r_inv_sqrt[np.isinf(r_inv_sqrt)] = 0.
+        r_mat_inv_sqrt = sp.diags(r_inv_sqrt)
+        return mx.dot(r_mat_inv_sqrt).transpose().dot(r_mat_inv_sqrt)
 
     def _peel(self):
         "Implements the peeling algorithm."
@@ -338,7 +377,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
         else:
             decimator_state = None
             propagator_state = None
-        # print(propagator_state,'\n-----------', decimator_state)
+        # self.graph_attention(propagator_state[1], sat_problem._adj_mask)
+
         prediction = self._predictor(decimator_state, sat_problem, True)
 
         # Post-processing local search
@@ -375,6 +415,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
 
             if check_termination is not None:
                 prediction = self._predictor(decimator_state, sat_problem)
+                # prediction = self._predictor(propagator_state, sat_problem)
+
                 prediction = self._update_solution(prediction, sat_problem)
 
                 check_termination(active_mask, prediction, sat_problem)

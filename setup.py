@@ -42,7 +42,8 @@ setup(
     packages=[
         "pdp",
         "pdp.factorgraph",
-        "pdp.nn"
+        "pdp.nn",
+        "pdp.transformer"
     ],
     scripts=[
         "src/satyr.py",

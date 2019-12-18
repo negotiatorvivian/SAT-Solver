@@ -12,10 +12,10 @@ has_meta_data: false
 #            ["../../datasets/SAT/cnf-60.json"],
 #            ["../../datasets/SAT/cnf-80.json"]]
 #model_path: "../../Trained-models/SAT"
-train_path: ["datasets/SAT/uniform_0.json"]
-validation_path: ["datasets/SAT/uniform_1.json"]
-test_path: ["datasets/SAT/uniform_2.json"] #["../../datasets/SAT/4SAT-test"] #  ["../../datasets/SAT/cnf-10.json"] #
-model_path: "Trained-models/SAT"
+train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/uniform_0.json", "/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/uniform_1.json", "/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/uniform_2.json"]
+validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/uniform_3.json"]
+test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/uniform_4.json"] #["../../datasets/SAT/4SAT-test"] #  ["../../datasets/SAT/cnf-10.json"] #
+model_path: "/home/ziwei/Workspace/PDP-Solver/Trained-models/SAT"
 repetition_num: 1
 #train_epoch_size: 200000
 train_epoch_size: 20000

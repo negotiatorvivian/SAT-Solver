@@ -128,9 +128,9 @@ class FactorGraphTrainerBase:
             segment_num = len(data[0])
 
             for i in range(segment_num):
+                # print('batch:', i + 1)
 
-                (graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label, _, _, _) = [self._to_cuda(d[i]) for d in data]
+                (graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, label, _, _, _) = [self._to_cuda(d[i]) for d in data]
                 total_example_num += (batch_variable_map.max() + 1)
 
                 self._train_batch(total_loss, optimizer, graph_map, batch_variable_map, batch_function_map, 
@@ -293,13 +293,10 @@ class FactorGraphTrainerBase:
     def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
         edge_feature, graph_feat, label, misc_data, post_processor, batch_replication, file, variable_num, function_num):
 
-        edge_num = graph_map.size(1)
-
         for (i, model) in enumerate(self._model_list):
-
             state = _module(model).get_init_state(graph_map, batch_variable_map, batch_function_map, 
                 edge_feature, graph_feat, randomized=False, batch_replication=batch_replication)
-
+            edge_feature_ = edge_feature
             prediction, _ = model(
                 init_state=state, graph_map=graph_map, batch_variable_map=batch_variable_map, 
                 batch_function_map=batch_function_map, edge_feature=edge_feature, 
@@ -307,8 +304,8 @@ class FactorGraphTrainerBase:
                 check_termination=self._check_recurrence_termination, batch_replication=batch_replication)
 
             if post_processor is not None and callable(post_processor):
-                message = post_processor(_module(model), prediction, graph_map,
-                    batch_variable_map, batch_function_map, edge_feature, graph_feat, label, misc_data, variable_num, function_num)
+                message = post_processor(_module(model), prediction, graph_map, batch_variable_map, batch_function_map,
+                                         edge_feature, edge_feature_, graph_feat, label, misc_data, variable_num, function_num)
                 print(message, file=file)
 
             for p in prediction:
@@ -317,11 +314,9 @@ class FactorGraphTrainerBase:
             for s in state:
                 del s
 
-
     def _check_recurrence_termination(self, active, prediction, sat_problem):
         "De-actives the CNF examples which the model has already found a SAT solution for."
         pass
-
 
     def train(self, train_list, validation_list, optimizer, last_export_path_base=None, 
               best_export_path_base=None, metric_index=0, load_model=None, reset_step=False,

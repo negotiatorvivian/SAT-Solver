@@ -3,7 +3,10 @@ datasets/
 dist/
 build/
 sat*
+Trained-models/
 Trained-models/SAT5
 Trained-models/SAT6
 Trained-models/SAT7
 Trained-models/SAT8
+.idea/
+7.0g/

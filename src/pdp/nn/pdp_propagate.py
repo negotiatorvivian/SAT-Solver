@@ -9,9 +9,9 @@ Define various propagators for the PDP framework.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import numpy as np
 from pdp.nn import util
-
+from pdp.nn.models import GAT
 
 ###############################################################
 ### The Propagator Classes
@@ -21,18 +21,20 @@ from pdp.nn import util
 class NeuralMessagePasser(nn.Module):
     "Implements the neural propagator."
 
-    def __init__(self, device, edge_dimension, decimator_dimension, meta_data_dimension, hidden_dimension, mem_hidden_dimension,
-                 mem_agg_hidden_dimension, agg_hidden_dimension, dropout):
+    def __init__(self, device, edge_dimension, decimator_dimension, meta_data_dimension, hidden_dimension,
+                 mem_hidden_dimension, mem_agg_hidden_dimension, agg_hidden_dimension, dropout):
 
         super(NeuralMessagePasser, self).__init__()
         self._device = device
         self._module_list = nn.ModuleList()
         self._drop_out = dropout
 
-        self._variable_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension + meta_data_dimension, 
+        self._variable_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension
+                                                           + meta_data_dimension,
             hidden_dimension, mem_hidden_dimension,
             mem_agg_hidden_dimension, agg_hidden_dimension, edge_dimension, include_self_message=False)
-        self._function_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension + meta_data_dimension, 
+        self._function_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension
+                                                           + meta_data_dimension,
             hidden_dimension, mem_hidden_dimension,
             mem_agg_hidden_dimension, agg_hidden_dimension, edge_dimension, include_self_message=False)
 
@@ -44,7 +46,12 @@ class NeuralMessagePasser(nn.Module):
         self._agg_hidden_dimension = agg_hidden_dimension
         self._mem_agg_hidden_dimension = mem_agg_hidden_dimension
         self._flag = False
+        self._n_head = 8
+        self._n_layers = 4
+        self._d_k = self._hidden_dimension/self._n_head
+        self.pre_embedding = np.load('datasets/arr_0.npy')
 
+    # @profile
     def forward(self, init_state, decimator_state, sat_problem, is_training, active_mask=None):
         if self._flag is False:
             print('-------------------------Propagate begin--------------------------\n')
@@ -52,7 +59,21 @@ class NeuralMessagePasser(nn.Module):
 
         variable_mask, variable_mask_transpose, function_mask, function_mask_transpose = sat_problem._graph_mask_tuple
         b_variable_mask, _, _, _ = sat_problem._batch_mask_tuple
-
+        # transformer = Transformer(
+        #     n_src_vocab = sat_problem._variable_num,
+        #     len_max_seq = sat_problem._function_num,
+        #     d_k = self._d_k,
+        #     d_v = self._d_k,
+        #     d_model = self._hidden_dimension,
+        #     d_word_vec = self._hidden_dimension,
+        #     d_inner = self._hidden_dimension,
+        #     n_layers = self._n_layers,
+        #     n_head = self._n_head,
+        #     dropout = self._drop_out).to(self._device)
+        # transformer.train()
+        # max_len = np.unique(list(sat_problem._graph_map[1]), return_counts = True)[1].max()
+        # output = transformer(src_seq=sat_problem._graph_map[0].view(-1, max_len), src_pos=sat_problem._graph_map[1].view(-1, max_len))
+        # output = output.reshape(-1, self._hidden_dimension)
         if active_mask is not None:
             mask = torch.mm(b_variable_mask, active_mask.float())
             mask = torch.mm(variable_mask_transpose, mask)
@@ -71,8 +92,12 @@ class NeuralMessagePasser(nn.Module):
             edge_mask = None
 
         variable_state, function_state = init_state
+        # ----------------------add metapath2vec-----------------------
 
-        ## variables --> functions
+
+
+
+        # variables --> functions
         decimator_variable_state = torch.cat((decimator_variable_state, sat_problem._edge_feature), 1)
 
         if sat_problem._meta_data is not None:
@@ -81,10 +106,15 @@ class NeuralMessagePasser(nn.Module):
         function_state = mask * self._variable_aggregator(
             decimator_variable_state, sat_problem._edge_feature, variable_mask, variable_mask_transpose, edge_mask) + (1 - mask) * function_state
 
-        function_state = F.dropout(function_state, p=self._drop_out, training=is_training)
+        # function_state = F.dropout(function_state, p=self._drop_out, training=is_training)
+        # function_feature = function_state.reshape(sat_problem._adj_mask.shape[0], -1)
+        # output = self.graph_attention(function_feature, sat_problem._adj_mask)
+        # W1_m = nn.Linear(
+        #     output.shape[1], function_feature.shape[1], bias = False).cuda()
+        # function_state = W1_m(output).reshape(variable_state.shape[0], -1)
+        # del output, function_feature
 
         ## functions --> variables
-        # print(decimator_function_state.dtype, sat_problem._edge_feature.dtype)
         if decimator_function_state.dtype == torch.float16 and sat_problem._edge_feature.dtype != torch.float16:
             # decimator_function_state = decimator_function_state.to(dtype = torch.float)
             decimator_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature.to(dtype = torch.float16)), 1)
@@ -98,9 +128,9 @@ class NeuralMessagePasser(nn.Module):
             decimator_function_state, sat_problem._edge_feature, function_mask, function_mask_transpose, edge_mask) + (1 - mask) * variable_state
 
         variable_state = F.dropout(variable_state, p=self._drop_out, training=is_training)
+        # variable_feature = variable_state.reshape(sat_problem._adj_mask.shape[0], -1)
 
         del mask
-
 
         return variable_state, function_state
 
@@ -117,7 +147,15 @@ class NeuralMessagePasser(nn.Module):
 
         return (variable_state, function_state)
 
-
+    def graph_attention(self, features, obj):
+        model = GAT(nfeat = features.shape[1],
+                    nhid = 160,
+                    nclass = 3,
+                    dropout = 0.6,
+                    nheads = 1,
+                    alpha = 0.2)
+        output = model(features, obj)
+        return output
 ###############################################################
 
 

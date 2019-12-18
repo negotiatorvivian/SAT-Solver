@@ -395,7 +395,7 @@ if __name__ == '__main__':
     parser.add_argument('size', action='store', type=int)
     parser.add_argument('method', action='store', type=str)
 
-    parser.add_argument('--min_n', action='store', dest='min_n', type=int, default=200)
+    parser.add_argument('--min_n', action='store', dest='min_n', type=int, default=300)
     parser.add_argument('--max_n', action='store', dest='max_n', type=int, default=400)
 
     parser.add_argument('--min_c', action='store', dest='min_c', type=int, default=40)
@@ -404,7 +404,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_q', action='store', dest='min_q', type=float, default=0.7)
     parser.add_argument('--max_q', action='store', dest='max_q', type=float, default=0.9)
 
-    parser.add_argument('--min_k', action='store', dest='min_k', type=int, default=3)
+    parser.add_argument('--min_k', action='store', dest='min_k', type=int, default=2)
     parser.add_argument('--max_k', action='store', dest='max_k', type=int, default=3)
 
     parser.add_argument('--min_a', action='store', dest='min_a', type=float, default=4)
