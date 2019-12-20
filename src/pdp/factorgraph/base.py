@@ -130,11 +130,12 @@ class FactorGraphTrainerBase:
             for i in range(segment_num):
                 # print('batch:', i + 1)
 
-                (graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, label, _, _, _) = [self._to_cuda(d[i]) for d in data]
+                (graph_map, batch_variable_map, batch_function_map, edge_feature, edge_embedding, graph_feat, label,
+                 _, variable_num, function_num) = [self._to_cuda(d[i]) for d in data]
                 total_example_num += (batch_variable_map.max() + 1)
 
                 self._train_batch(total_loss, optimizer, graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label)
+                    edge_feature, edge_embedding, graph_feat, label, variable_num, function_num)
 
                 # if self._config['verbose']:
                 #     print("Training epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
@@ -154,7 +155,7 @@ class FactorGraphTrainerBase:
         return torch.tensor(total_loss) / total_example_num  # max(1, len(train_loader))
 
     def _train_batch(self, total_loss, optimizer, graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label):
+                    edge_feature, edge_embedding, graph_feat, label, variable_num, function_num):
 
         optimizer.zero_grad()
         lambda_value = torch.tensor([self._config['lambda']], dtype=torch.float32, device=self._device)
@@ -162,7 +163,7 @@ class FactorGraphTrainerBase:
         for (i, model) in enumerate(self._model_list):
 
             state = _module(model).get_init_state(graph_map, batch_variable_map, batch_function_map, 
-                edge_feature, graph_feat, self._config['randomized'])
+                edge_embedding, graph_feat, variable_num, function_num, self._config['randomized'])
 
             loss = torch.zeros(1, device=self._device)
 
@@ -170,8 +171,9 @@ class FactorGraphTrainerBase:
 
                 prediction, state = model(
                     init_state=state, graph_map=graph_map, batch_variable_map=batch_variable_map, 
-                    batch_function_map=batch_function_map, edge_feature=edge_feature, 
-                    meta_data=graph_feat, is_training=True, iteration_num=self._config['train_inner_recurrence_num'])
+                    batch_function_map=batch_function_map, edge_feature=edge_feature, edge_embedding = edge_embedding,
+                    meta_data=graph_feat, variable_num = variable_num, function_num = function_num, is_training=True,
+                    iteration_num=self._config['train_inner_recurrence_num'])
 
                 loss += self._compute_loss(
                             model=_module(model), loss=self._loss, prediction=prediction,
@@ -208,13 +210,12 @@ class FactorGraphTrainerBase:
                 segment_num = len(data[0])
 
                 for i in range(segment_num):
-
-                    (graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label, _, _, _) = [self._to_cuda(d[i]) for d in data]
+                    (graph_map, batch_variable_map, batch_function_map, edge_feature, edge_embedding, graph_feat, label,
+                     _, variable_num, function_num) = [self._to_cuda(d[i]) for d in data]
                     total_example_num += (batch_variable_map.max() + 1).detach().cpu().numpy()
 
                     self._test_batch(error, graph_map, batch_variable_map, batch_function_map, 
-                        edge_feature, graph_feat, label, batch_replication)
+                        edge_feature, edge_embedding, graph_feat, label, batch_replication, variable_num, function_num)
 
                     # if self._config['verbose']:
                     #     print("Testing epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
@@ -234,7 +235,7 @@ class FactorGraphTrainerBase:
         return error / total_example_num
 
     def _test_batch(self, error, graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label, batch_replication):
+                    edge_feature, edge_embedding, graph_feat, label, batch_replication, variable_num, function_num):
 
         this_batch_size = batch_variable_map.max() + 1 
         edge_num = graph_map.size(1)
@@ -242,11 +243,11 @@ class FactorGraphTrainerBase:
         for (i, model) in enumerate(self._model_list):
 
             state = _module(model).get_init_state(graph_map, batch_variable_map, batch_function_map, 
-                edge_feature, graph_feat, randomized=True, batch_replication=batch_replication)
+                edge_embedding, graph_feat, variable_num, function_num, randomized=True, batch_replication=batch_replication)
 
             prediction, _ = model(
                 init_state=state, graph_map=graph_map, batch_variable_map=batch_variable_map, 
-                batch_function_map=batch_function_map, edge_feature=edge_feature, 
+                batch_function_map=batch_function_map, edge_feature=edge_feature, edge_embedding = edge_embedding,
                 meta_data=graph_feat, is_training=False, iteration_num=self._config['test_recurrence_num'],
                 check_termination=self._check_recurrence_termination, batch_replication=batch_replication)
 
@@ -272,12 +273,11 @@ class FactorGraphTrainerBase:
                 segment_num = len(data[0])
 
                 for i in range(segment_num):
-
-                    (graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label, misc_data, variable_num, function_num) = [self._to_cuda(d[i]) for d in data]
+                    (graph_map, batch_variable_map, batch_function_map, edge_feature, edge_embedding, graph_feat, label,
+                     misc_data, variable_num, function_num) = [self._to_cuda(d[i]) for d in data]
 
                     self._predict_batch(graph_map, batch_variable_map, batch_function_map, 
-                        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication, file, variable_num, function_num)
+                        edge_feature, edge_embedding, graph_feat, label, misc_data, post_processor, batch_replication, file, variable_num, function_num)
 
                     del graph_map
                     del batch_variable_map
@@ -290,16 +290,17 @@ class FactorGraphTrainerBase:
                 #     print("Predicting epoch: %3d%% complete..."
                 #           % (j * 100.0 / test_batch_num), end='\r')
 
-    def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
-        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication, file, variable_num, function_num):
+    def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, edge_feature, edge_embedding, graph_feat,
+                       label, misc_data, post_processor, batch_replication, file, variable_num, function_num):
 
         for (i, model) in enumerate(self._model_list):
             state = _module(model).get_init_state(graph_map, batch_variable_map, batch_function_map, 
-                edge_feature, graph_feat, randomized=False, batch_replication=batch_replication)
+                edge_embedding, graph_feat, variable_num, function_num, randomized=False,
+                                                  batch_replication=batch_replication)
             edge_feature_ = edge_feature
             prediction, _ = model(
                 init_state=state, graph_map=graph_map, batch_variable_map=batch_variable_map, 
-                batch_function_map=batch_function_map, edge_feature=edge_feature, 
+                batch_function_map=batch_function_map, edge_feature=edge_feature, edge_embedding = edge_embedding,
                 meta_data=graph_feat, is_training=False, iteration_num=self._config['test_recurrence_num'],
                 check_termination=self._check_recurrence_termination, batch_replication=batch_replication)
 

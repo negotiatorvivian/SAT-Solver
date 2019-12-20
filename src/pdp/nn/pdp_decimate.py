@@ -30,7 +30,6 @@ class NeuralDecimator(nn.Module):
         self._module_list = nn.ModuleList()
         self._drop_out = dropout
 
-
         if isinstance(message_dimension, tuple):
             variable_message_dim, function_message_dim = message_dimension
         else:
@@ -51,7 +50,6 @@ class NeuralDecimator(nn.Module):
         self._mem_agg_hidden_dimension = mem_agg_hidden_dimension
         self.flag = False
 
-
     def forward(self, init_state, message_state, sat_problem, is_training, active_mask=None):
         if self.flag is False:
             print('-------------------------Decimate begin--------------------------\n')
@@ -62,10 +60,13 @@ class NeuralDecimator(nn.Module):
 
         if active_mask is not None:
             mask = torch.mm(b_variable_mask, active_mask.float())
-            mask = torch.mm(variable_mask_transpose, mask)
+            func_mask = torch.mm(b_function_mask, active_mask.float())
+            # mask = torch.mm(variable_mask_transpose, mask)
         else:
             edge_num = init_state[0].size(0)
             mask = torch.ones(edge_num, 1, device=self._device)
+            edge_func_num = init_state[1].size(0)
+            func_mask = torch.ones(edge_func_num, 1, device=self._device)
 
         if sat_problem._meta_data is not None:
             graph_feat = torch.mm(b_variable_mask, sat_problem._meta_data)
@@ -74,12 +75,12 @@ class NeuralDecimator(nn.Module):
         variable_state, function_state = message_state
 
         # Variable states
-        if variable_state.dtype == torch.float16 or sat_problem._edge_feature.dtype == torch.float16:
-                sat_problem._edge_feature = sat_problem._edge_feature.to(dtype = torch.float)
-                variable_state = variable_state.to(dtype = torch.float)
-                variable_state = torch.cat((variable_state, sat_problem._edge_feature), 1).to(dtype = torch.half)
-        else:
-            variable_state = torch.cat((variable_state, sat_problem._edge_feature), 1)
+        # if variable_state.dtype == torch.float16 or sat_problem._edge_feature.dtype == torch.float16:
+        #         sat_problem._edge_feature = sat_problem._edge_feature.to(dtype = torch.float)
+        #         variable_state = variable_state.to(dtype = torch.float)
+        #         variable_state = torch.cat((variable_state, sat_problem._edge_feature), 1).to(dtype = torch.half)
+        # else:
+        #     variable_state = torch.cat((variable_state, sat_problem._edge_feature), 1)
         # seq_len = sat_problem._edge_feature.shape
         # output = attention.Attention(variable_state.unsqueeze(0), 3, variable_state.shape[1], seq_len, seq_len, self._device)
 
@@ -89,31 +90,32 @@ class NeuralDecimator(nn.Module):
         variable_state = mask * self._variable_rnn_cell(variable_state, init_state[0]) + (1 - mask) * init_state[0]
 
         # Function states
-        function_state = torch.cat((function_state, sat_problem._edge_feature), 1)
+        # function_state = torch.cat((function_state, sat_problem._edge_feature), 1)
 
         if sat_problem._meta_data is not None:
             function_state = torch.cat((function_state, graph_feat), 1)
         if init_state[1].dtype == torch.float16:
             init_state_ = init_state[1].to(dtype = torch.float32)
             # print(init_state_.dtype, mask.dtype, function_state.dtype)
-            function_state = (mask * self._function_rnn_cell(function_state, init_state_) + (1 - mask) * init_state_).to(dtype = torch.float16)
+            function_state = (func_mask * self._function_rnn_cell(function_state, init_state_) + (1 - func_mask) * init_state_).to(dtype = torch.float16)
         else:    
-            function_state = mask * self._function_rnn_cell(function_state, init_state[1]) + (1 - mask) * init_state[1]
+            function_state = func_mask * self._function_rnn_cell(function_state, init_state[1]) + (1 - func_mask) * init_state[1]
 
         del mask
 
         return variable_state, function_state
 
-    def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, randomized, batch_replication):
+    def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, variable_num,
+                       function_num, randomized, batch_replication):
 
         edge_num = graph_map.size(1) * batch_replication
 
         if randomized:
-            variable_state = 2.0*torch.rand(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
-            function_state = 2.0*torch.rand(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
+            variable_state = 2.0*torch.rand(sum(variable_num), self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
+            function_state = 2.0*torch.rand(sum(function_num), self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
         else:
-            variable_state = torch.zeros(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device)
-            function_state = torch.zeros(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device)
+            variable_state = torch.zeros(sum(variable_num), self._hidden_dimension, dtype=torch.float32, device=self._device)
+            function_state = torch.zeros(sum(function_num), self._hidden_dimension, dtype=torch.float32, device=self._device)
 
         return (variable_state, function_state)
 

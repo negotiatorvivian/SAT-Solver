@@ -64,14 +64,13 @@ class MessageAggregator(nn.Module):
 
         if edge_mask is not None:
             state = state * edge_mask
-        if state.dtype == torch.float16 or mask.dtype == torch.float16:
-            mask = mask.to(dtype = torch.float)
-            state = state.to(dtype = torch.float)
-            aggregated_state = torch.mm(mask, state)
-            # aggregated_state = torch.mm(mask, state).to(dtype = torch.half)
-        else:
-            aggregated_state = torch.mm(mask, state)
-
+        # if state.dtype == torch.float16 or mask.dtype == torch.float16:
+        #     mask = mask.to(dtype = torch.float)
+        #     state = state.to(dtype = torch.float)
+        #     aggregated_state = torch.mm(mask, state)
+        # else:
+        #     aggregated_state = torch.mm(mask, state)
+        aggregated_state = state
         if not self._include_self_message:
             if mask_transpose.dtype == torch.float16 or aggregated_state.dtype == torch.float16:
                 mask_transpose = mask_transpose.to(dtype = torch.float)

@@ -11,7 +11,7 @@ repetition_num: 1
 train_epoch_size: 40000
 epoch_num: 500
 label_dim: 1
-edge_feature_dim: 1
+edge_feature_dim: 0
 meta_feature_dim: 0 # 1
 error_dim: 3
 metric_index: 0

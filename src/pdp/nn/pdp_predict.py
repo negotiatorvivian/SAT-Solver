@@ -67,8 +67,8 @@ class NeuralPredictor(nn.Module):
 
         if self._variable_classifier is not None:
 
-            aggregated_variable_state = torch.cat((decimator_variable_state, sat_problem._edge_feature), 1)
-
+            # aggregated_variable_state = torch.cat((decimator_variable_state, sat_problem._edge_feature), 1)
+            aggregated_variable_state = decimator_variable_state
             if sat_problem._meta_data is not None:
                 aggregated_variable_state = torch.cat((aggregated_variable_state, graph_feat), 1)
 
@@ -79,8 +79,8 @@ class NeuralPredictor(nn.Module):
 
         if self._function_classifier is not None:
 
-            aggregated_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature), 1)
-
+            # aggregated_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature), 1)
+            aggregated_function_state = decimator_function_state
             if sat_problem._meta_data is not None:
                 aggregated_function_state = torch.cat((aggregated_function_state, graph_feat), 1)
 

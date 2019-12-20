@@ -62,18 +62,14 @@ class SatFactorGraphTrainer(FactorGraphTrainerBase):
                                                                   decimator_dimension = config['hidden_dim'],
                                                                   mem_hidden_dimension = config['mem_hidden_dim'],
                                                                   agg_hidden_dimension = config['agg_hidden_dim'],
-                                                                  mem_agg_hidden_dimension = config[
-                                                                      'mem_agg_hidden_dim'],
+                                                                  mem_agg_hidden_dimension = config['mem_agg_hidden_dim'],
                                                                   prediction_dimension = config['prediction_dim'],
                                                                   variable_classifier = Perceptron(config['hidden_dim'],
-                                                                                                   config[
-                                                                                                       'classifier_dim'],
-                                                                                                   config[
-                                                                                                       'prediction_dim']),
+                                                                                                   config['classifier_dim'],
+                                                                                                   config['prediction_dim']),
                                                                   function_classifier = None,
                                                                   dropout = config['dropout'],
-                                                                  local_search_iterations = config[
-                                                                      'local_search_iteration'],
+                                                                  local_search_iterations = config['local_search_iteration'],
                                                                   epsilon = config['epsilon'])]
 
         elif config['model_type'] == 'p-nd-np':
@@ -244,8 +240,8 @@ class SatFactorGraphTrainer(FactorGraphTrainerBase):
                 # 'label': int(labs[i, 0]),
                 # 'solved': int(output[i].flatten()[0] == 1),
                 'unsat_clauses': int(unsat_clause_num[i].flatten()[0]),
-                'solution': (prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten() > 0.5).astype(
-                    int).tolist()
+                # 'solution': (prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten() > 0.5).astype(
+                #     int).tolist()
             }
             # message += str(self._config['test_recurrence_num']) + '\t' + str(self._config['local_search_iteration'])+ '\t' + str(self._config['epsilon']) + '\ngraph_map\n'
             # message += str([int(v) for v in graph_map[1]]) + '\nlength of graph_map:'+ str(len(graph_map[1])) + str(graph_map[1][-10:]) + '\nclause_values\n'

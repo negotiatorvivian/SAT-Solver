@@ -30,7 +30,7 @@ class NeuralMessagePasser(nn.Module):
         self._drop_out = dropout
 
         self._variable_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension
-                                                           + meta_data_dimension,hidden_dimension, mem_hidden_dimension,
+                                                           + meta_data_dimension, hidden_dimension, mem_hidden_dimension,
                                                            mem_agg_hidden_dimension, agg_hidden_dimension,
                                                            edge_dimension, include_self_message=False)
         self._function_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension
@@ -97,13 +97,13 @@ class NeuralMessagePasser(nn.Module):
 
 
         # variables --> functions
-        decimator_variable_state = torch.cat((decimator_variable_state, sat_problem._edge_feature), 1)
+        # decimator_variable_state = torch.cat((decimator_variable_state, sat_problem._edge_feature), 1)
 
         if sat_problem._meta_data is not None:
             decimator_variable_state = torch.cat((decimator_variable_state, graph_feat), 1)
 
-        function_state = mask * self._variable_aggregator(
-            decimator_variable_state, sat_problem._edge_feature, variable_mask, variable_mask_transpose, edge_mask) + (1 - mask) * function_state
+        # function_state = mask * self._variable_aggregator(
+        #     decimator_variable_state, sat_problem._edge_feature, variable_mask, variable_mask_transpose, edge_mask) + (1 - mask) * function_state
 
         # function_state = F.dropout(function_state, p=self._drop_out, training=is_training)
         # function_feature = function_state.reshape(sat_problem._adj_mask.shape[0], -1)
@@ -114,36 +114,56 @@ class NeuralMessagePasser(nn.Module):
         # del output, function_feature
 
         ## functions --> variables
-        if decimator_function_state.dtype == torch.float16 and sat_problem._edge_feature.dtype != torch.float16:
-            # decimator_function_state = decimator_function_state.to(dtype = torch.float)
-            decimator_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature.to(dtype = torch.float16)), 1)
-        else:
-            decimator_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature), 1)
-
-        if sat_problem._meta_data is not None:
-            decimator_function_state = torch.cat((decimator_function_state, graph_feat), 1)
-
-        variable_state = mask * self._function_aggregator(
-            decimator_function_state, sat_problem._edge_feature, function_mask, function_mask_transpose, edge_mask) + (1 - mask) * variable_state
-
-        variable_state = F.dropout(variable_state, p=self._drop_out, training=is_training)
-        # variable_feature = variable_state.reshape(sat_problem._adj_mask.shape[0], -1)
+        # if decimator_function_state.dtype == torch.float16 and sat_problem._edge_feature.dtype != torch.float16:
+        #     # decimator_function_state = decimator_function_state.to(dtype = torch.float)
+        #     decimator_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature.to(dtype = torch.float16)), 1)
+        # else:
+        #     decimator_function_state = torch.cat((decimator_function_state, sat_problem._edge_feature), 1)
+        #
+        # if sat_problem._meta_data is not None:
+        #     decimator_function_state = torch.cat((decimator_function_state, graph_feat), 1)
+        #
+        # variable_state = mask * self._function_aggregator(
+        #     decimator_function_state, sat_problem._edge_feature, function_mask, function_mask_transpose, edge_mask) + (1 - mask) * variable_state
+        #
+        # variable_state = F.dropout(variable_state, p=self._drop_out, training=is_training)
 
         del mask
 
         return variable_state, function_state
 
-    def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, randomized, batch_replication):
+    def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_embedding, graph_feat, variable_num,
+                       function_num, randomized, batch_replication):
 
-        edge_num = graph_map.size(1) * batch_replication
+        # edge_num = graph_map.size(1) * batch_replication
 
         if randomized:
-            variable_state = 2.0*torch.rand(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
-            function_state = 2.0*torch.rand(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
-        else:
-            variable_state = torch.zeros(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device)
-            function_state = torch.zeros(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device)
+            # variable_state = 2.0*torch.rand(sum(variable_num), self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
+            # function_state = 2.0*torch.rand(sum(function_num), self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
+            variable_state = torch.zeros(sum(variable_num), self._hidden_dimension, dtype = torch.float32,
+                                         device = self._device)
+            function_state = torch.zeros(sum(function_num), self._hidden_dimension, dtype = torch.float32,
+                                         device = self._device)
 
+            cur_index = 0
+            edge_embedding = torch.reshape(edge_embedding, [-1, 100])
+            for i in range(len(variable_num)):
+                variable_state[sum(variable_num[:i]):sum(variable_num[:(i + 1)]), :] = edge_embedding[cur_index:(cur_index+variable_num[i]), :]
+                cur_index += variable_num[i]
+                function_state[sum(function_num[:i]):sum(function_num[:(i + 1)]), :] = edge_embedding[cur_index:(cur_index+function_num[i]), :]
+                cur_index += function_num[i]
+        else:
+            variable_state = torch.zeros(sum(variable_num), self._hidden_dimension, dtype=torch.float32, device=self._device)
+            function_state = torch.zeros(sum(function_num), self._hidden_dimension, dtype=torch.float32, device=self._device)
+            cur_index = 0
+            edge_embedding = torch.reshape(edge_embedding, [-1, 100])
+            for i in range(len(variable_num)):
+                variable_state[sum(variable_num[:i]):sum(variable_num[:(i + 1)]), :] = edge_embedding[cur_index:(
+                            cur_index + variable_num[i]), :]
+                cur_index += variable_num[i]
+                function_state[sum(function_num[:i]):sum(function_num[:(i + 1)]), :] = edge_embedding[cur_index:(
+                            cur_index + function_num[i]), :]
+                cur_index += function_num[i]
         return (variable_state, function_state)
 
     def graph_attention(self, features, obj):

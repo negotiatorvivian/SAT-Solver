@@ -2,9 +2,9 @@ model_type: "np-nd-np"
 has_meta_data: false
 model_name: "p-prodec2-gcnf-10-100-pytorch"
 #model_path: "Trained-models/SAT/p-prodec2-gcnf-4SAT-pytorch/2.0g/best/"
-model_path: "/home/ziwei/Workspace/PDP-Solver/Trained-models/SAT/p-prodec2-gcnf-10-100-pytorch/8.0g/last/"
+model_path: "/home/ziwei/Workspace/PDP-Solver/Trained-models/SAT/p-prodec2-gcnf-10-100-pytorch/8.0g-origin/best/"
 label_dim: 1
-edge_feature_dim: 1
+edge_feature_dim: 0
 meta_feature_dim: 0
 prediction_dim: 1
 # hidden_dim: 160 #150
@@ -12,7 +12,7 @@ prediction_dim: 1
 # agg_hidden_dim: 96 #135
 # mem_agg_hidden_dim: 32 #50
 # classifier_dim: 56 #100
-hidden_dim: 128
+hidden_dim: 100
 mem_hidden_dim: 136
 agg_hidden_dim: 100
 mem_agg_hidden_dim: 50
