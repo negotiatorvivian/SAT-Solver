@@ -16,8 +16,8 @@ meta_feature_dim: 0 # 1
 error_dim: 3
 metric_index: 0
 prediction_dim: 1
-hidden_dim: 100  # 110
-mem_hidden_dim: 136 #100
+hidden_dim: 80  # 110
+mem_hidden_dim: 100 #100
 agg_hidden_dim: 100  # 135
 mem_agg_hidden_dim: 50  # 50
 classifier_dim: 50  # 100

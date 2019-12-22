@@ -12,8 +12,8 @@ prediction_dim: 1
 # agg_hidden_dim: 96 #135
 # mem_agg_hidden_dim: 32 #50
 # classifier_dim: 56 #100
-hidden_dim: 100
-mem_hidden_dim: 136
+hidden_dim: 80
+mem_hidden_dim: 100
 agg_hidden_dim: 100
 mem_agg_hidden_dim: 50
 classifier_dim: 50
