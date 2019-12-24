@@ -106,7 +106,7 @@ class NeuralMessagePasser(nn.Module):
         function_state = mask * self._variable_aggregator(
             decimator_variable_state, sat_problem._edge_feature, variable_mask, variable_mask_transpose, edge_mask) + (1 - mask) * function_state
 
-        # function_state = F.dropout(function_state, p=self._drop_out, training=is_training)
+        function_state = F.dropout(function_state, p=self._drop_out, training=is_training)
         # function_feature = function_state.reshape(sat_problem._adj_mask.shape[0], -1)
         # output = self.graph_attention(function_feature, sat_problem._adj_mask)
         # W1_m = nn.Linear(
