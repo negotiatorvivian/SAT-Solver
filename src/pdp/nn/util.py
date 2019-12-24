@@ -103,6 +103,58 @@ class MessageAggregator(nn.Module):
 
 ###############################################################
 
+class TransformAggregator(nn.Module):
+    def __init__(self, device, input_dimension, output_dimension, mem_hidden_dimension, mem_agg_hidden_dimension, agg_hidden_dimension,
+                 feature_dimension, include_self_message):
+        super(TransformAggregator, self).__init__()
+        self._device = device
+        self._include_self_message = include_self_message
+        self._module_list = nn.ModuleList()
+        if mem_hidden_dimension > 0 and mem_agg_hidden_dimension > 0:
+            self._W1_m = nn.Bilinear(input_dimension, input_dimension, mem_hidden_dimension, bias = False)
+            self._W2_m = nn.Linear(mem_hidden_dimension, mem_agg_hidden_dimension, bias = True)
+            self._module_list.append(self._W1_m)
+            self._module_list.append(self._W2_m)
+        if agg_hidden_dimension > 0 and mem_agg_hidden_dimension > 0:
+
+            self._W1_a = nn.Linear(
+                mem_agg_hidden_dimension + feature_dimension, agg_hidden_dimension, bias=True)  # .to(self._device)
+
+            self._W2_a = nn.Linear(
+                agg_hidden_dimension, output_dimension, bias=False)  # .to(self._device)
+
+            self._module_list.append(self._W1_a)
+            self._module_list.append(self._W2_a)
+        self._agg_hidden_dimension = agg_hidden_dimension
+        self._mem_hidden_dimension = mem_hidden_dimension
+        self._mem_agg_hidden_dimension = mem_agg_hidden_dimension
+
+    def forward(self, state1, state2, feature, mask, mask_transpose, edge_mask=None):
+
+        # Apply the pre-aggregation transform
+        if self._mem_hidden_dimension > 0 and self._mem_agg_hidden_dimension > 0:
+            state = F.logsigmoid(self._W2_m(F.logsigmoid(self._W1_m(state1, state2))))
+        if edge_mask is not None:
+            state = state * edge_mask
+        aggregated_state = torch.mm(mask, state)
+        if not self._include_self_message:
+            aggregated_state = torch.mm(mask_transpose, aggregated_state)
+
+            if edge_mask is not None:
+                aggregated_state = aggregated_state - state * edge_mask
+            else:
+                aggregated_state = aggregated_state - state
+
+        if feature is not None:
+            aggregated_state = torch.cat((aggregated_state, feature), 1)
+
+        # Apply the post-aggregation transform
+        if self._agg_hidden_dimension > 0 and self._mem_agg_hidden_dimension > 0:
+            aggregated_state = F.logsigmoid(self._W2_a(F.logsigmoid(self._W1_a(aggregated_state))))
+
+        return aggregated_state
+###############################################################
+
 
 class MultiLayerPerceptron(nn.Module):
     "Implements a standard fully-connected, multi-layer perceptron."
@@ -294,6 +346,7 @@ def sparse_argmax(x, mask, device):
 
     return torch.argmax(dense_mat, 0)
 
+
 def sparse_max(x, mask, device):
     "Implements the exact, memory-inefficient max operation for a row vector input."
 
@@ -304,10 +357,12 @@ def sparse_max(x, mask, device):
 
     return torch.max(dense_mat, 0)[0] + x.min() - 1
 
+
 def safe_exp(x, device):
     "Implements safe exp operation."
 
     return torch.min(x, torch.tensor([30.0], device=device)).exp()
+
 
 def sparse_smooth_max(x, mask, device, alpha=30):
     "Implements the approximate, memory-efficient max operation for a row vector input."

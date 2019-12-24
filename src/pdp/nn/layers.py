@@ -25,6 +25,7 @@ class GraphAttentionLayer(nn.Module):
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
         self.leakyrelu = nn.LeakyReLU(self.alpha, inplace=True)
+
     # @profile
     def forward(self, input, adj):
         h = torch.mm(input, self.W).cpu()

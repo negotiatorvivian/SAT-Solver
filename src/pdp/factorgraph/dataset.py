@@ -56,6 +56,8 @@ class DynamicBatchDivider(object):
             while i < batch_size:
                 allowed_batch_size = self.limit // (sorted_edge_num[i] * self.hidden_dim)
                 # allowed_batch_size = min(allowed_batch_size, 1)
+                if allowed_batch_size == 0:
+                    print('allowed_batch_size:', allowed_batch_size)
                 ind = indices[i:min(i + allowed_batch_size, batch_size)]
 
                 if graph_feature[0] is None:
@@ -162,8 +164,8 @@ class FactorGraphDataset(data.Dataset):
         misc_data = []
         if len(input_data) > 4:
             misc_data = input_data[4]
-        # result = True
-        result = input_data[3] if len(input_data) > 3 else False
+        result = True
+        # result = input_data[3] if len(input_data) > 3 else False
 
 
         return (variable_num, function_num, graph_map, edge_feature, None, float(result), misc_data)

@@ -1,6 +1,6 @@
 model_name: "p-prodec2-modular-variable-pytorch"
 model_type: "np-nd-np"
-version: "1.0g-origin"
+version: "3.0g"
 #train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
 #validation_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"]
 #test_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"] #["../../datasets/SAT/M0-4SAT-100"] #["../../datasets/SAT/cnf-10.json"] #["../../datasets/SAT/sat-race-test.json"] # ["../../datasets/SAT/cnf-10.json"] #["../../datasets/SAT/3SAT-100"] #
@@ -8,13 +8,13 @@ version: "1.0g-origin"
 # train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT/v-modular_0.json","/home/ziwei/Workspace/PDP-Solver/datasets/SAT/v-modular_2.json","/home/ziwei/Workspace/PDP-Solver/datasets/SAT/v-modular_4.json"]
 # validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT/v-modular_1.json"]
 # test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT/v-modular_3.json"]  #[],["datasets/SAT2/v-modular_4.json"] #["../../datasets/SAT/4SAT-test"] #  ["../../datasets/SAT/cnf-10.json"] #
-train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/train_0.json"]
-validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/train_0.json"]
-test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/train_0.json"]
+train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/g2sat/train.json"]
+validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/g2sat/validate.json"]
+test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/g2sat/test.json"]
 #train_path: ['datasets/test_2']
 #test_path: ['datasets/test_2']
 #validation_path: ['datasets/test_2']
-model_path: "Trained-models/SAT8"
+model_path: "Trained-models/g2sat"
 repetition_num: 1
 train_epoch_size: 40000
 epoch_num: 500
@@ -25,10 +25,10 @@ error_dim: 3
 metric_index: 0
 prediction_dim: 1
 hidden_dim: 128  # 110
-mem_hidden_dim: 100 #100 150
-agg_hidden_dim: 100  # 135 100
-mem_agg_hidden_dim: 32  # 50
-classifier_dim: 56  # 100 50
+mem_hidden_dim: 150 #100 150
+agg_hidden_dim: 96  # 135 100
+mem_agg_hidden_dim: 48  # 50  cuda memory
+classifier_dim: 100  # 100 50
 batch_size: 5000
 # learning_rate: 0.0001
 learning_rate: 0.001
@@ -36,7 +36,7 @@ exploration: 0.1
 verbose: true
 randomized: true
 train_inner_recurrence_num: 1
-train_outer_recurrence_num: 4
+train_outer_recurrence_num: 10
 test_recurrence_num: 200
 max_cache_size: 100000
 dropout: 0.2  #0.2
@@ -44,10 +44,10 @@ clip_norm: 0.65
 #clip_norm: 0.7
 #weight_decay: 0.0000000001
 weight_decay: 0.000000001
-loss_sharpness: 2
+loss_sharpness: 5
 train_batch_limit: 5800000
 # train_batch_limit: 20000000
-test_batch_limit: 4000000
+test_batch_limit: 5800000
 #--------------IF USE GENERATOR--------------
 #generator: "v-modular"
 #min_n: 5

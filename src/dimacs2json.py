@@ -78,7 +78,7 @@ class CompactDimacs:
 
         ind = np.nonzero(self._clause_mat)
         return [[var_num, clause_num], list((ind[1] + 1) * self._clause_mat[ind]),
-                 list(ind[0] + 1), self._output, [self.file_name]]
+                 list(ind[0] + 1)]
 
 
 def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):

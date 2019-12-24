@@ -342,8 +342,7 @@ class FactorGraphTrainerBase:
              self._config['repetition_num']), dtype=np.float32)
 
         losses = np.zeros(
-            (model_num, self._config['epoch_num'], self._config['repetition_num']),
-            dtype=np.float32)
+            (model_num, self._config['epoch_num'], self._config['repetition_num']), dtype=np.float32)
 
         best_errors = np.repeat(np.inf, model_num)
 
