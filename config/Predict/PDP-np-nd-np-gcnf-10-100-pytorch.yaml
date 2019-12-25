@@ -2,7 +2,7 @@ model_type: "np-nd-np"
 has_meta_data: false
 model_name: "p-prodec2-modular-variable-pytorch"
 #model_path: "Trained-models/SAT/p-prodec2-gcnf-4SAT-pytorch/2.0g/best/"
-model_path: "/home/ziwei/Workspace/PDP-Solver/Trained-models/SAT1/p-prodec2-modular-variable-pytorch/1.0g/best/"
+model_path: "/home/ziwei/Workspace/PDP-Solver/Trained-models/SAT1/p-prodec2-modular-variable-pytorch/3.0g/best/"
 label_dim: 1
 edge_feature_dim: 1
 meta_feature_dim: 0
@@ -12,9 +12,9 @@ prediction_dim: 1
 # agg_hidden_dim: 96 #135
 # mem_agg_hidden_dim: 32 #50
 # classifier_dim: 56 #100
-hidden_dim: 128
+hidden_dim: 110
 mem_hidden_dim: 150
-agg_hidden_dim: 96
+agg_hidden_dim: 64
 mem_agg_hidden_dim: 48
 classifier_dim: 100
 #batch_replication: 10

@@ -6,6 +6,7 @@
 import os
 import time
 import math
+import json
 import multiprocessing
 
 import numpy as np
@@ -322,7 +323,9 @@ class FactorGraphTrainerBase:
               best_export_path_base=None, metric_index=0, load_model=None, reset_step=False,
               generator=None, train_epoch_size=0, batch_replication = 1):
         "Trains the PDP model."
-
+        config_path = '/'.join(last_export_path_base.split('/')[:-1]) + '/config'
+        with open(config_path, 'w') as f:
+            f.write(json.dumps(self._config, indent=1))
         # Build the input pipeline
         train_loader = FactorGraphDataset.get_loader(
             input_file=train_list[0], limit=self._config['train_batch_limit'],

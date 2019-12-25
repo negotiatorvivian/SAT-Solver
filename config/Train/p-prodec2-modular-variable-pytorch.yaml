@@ -1,6 +1,6 @@
 model_name: "p-prodec2-modular-variable-pytorch"
 model_type: "np-nd-np"
-version: "2.0g"
+version: "4.0g"
 #train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
 #validation_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"]
 #test_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"] #["../../datasets/SAT/M0-4SAT-100"] #["../../datasets/SAT/cnf-10.json"] #["../../datasets/SAT/sat-race-test.json"] # ["../../datasets/SAT/cnf-10.json"] #["../../datasets/SAT/3SAT-100"] #
@@ -24,10 +24,10 @@ meta_feature_dim: 0 # 1
 error_dim: 3
 metric_index: 0
 prediction_dim: 1
-hidden_dim: 128  # 110
+hidden_dim: 110  # 110
 mem_hidden_dim: 150 #100 150
-agg_hidden_dim: 96  # 135 100
-mem_agg_hidden_dim: 48  # 50
+agg_hidden_dim: 64  # 135 100
+mem_agg_hidden_dim: 32  # 50
 classifier_dim: 100  # 100 50
 batch_size: 5000
 # learning_rate: 0.0001
