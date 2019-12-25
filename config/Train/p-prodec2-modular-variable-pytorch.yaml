@@ -1,13 +1,13 @@
 model_name: "p-prodec2-modular-variable-pytorch"
 model_type: "np-nd-np"
-version: "1.0g"
+version: "2.0g"
 #train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
 #validation_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"]
 #test_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"] #["../../datasets/SAT/M0-4SAT-100"] #["../../datasets/SAT/cnf-10.json"] #["../../datasets/SAT/sat-race-test.json"] # ["../../datasets/SAT/cnf-10.json"] #["../../datasets/SAT/3SAT-100"] #
 #model_path: "../../Trained-models/SAT"
- train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_0.json","/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_2.json","/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_4.json"]
- validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_1.json"]
- test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_3.json"]  #[],["datasets/SAT2/v-modular_4.json"] #["../../datasets/SAT/4SAT-test"] #  ["../../datasets/SAT/cnf-10.json"] #
+train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_0.json","/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_2.json","/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_4.json"]
+validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_1.json"]
+test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/SAT7/v-modular_3.json"]  #[],["datasets/SAT2/v-modular_4.json"] #["../../datasets/SAT/4SAT-test"] #  ["../../datasets/SAT/cnf-10.json"] #
 #train_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/train_0.json"]
 #validation_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/train_0.json"]
 #test_path: ["/home/ziwei/Workspace/PDP-Solver/datasets/uniform1/train_0.json"]
